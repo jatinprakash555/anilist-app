@@ -32,7 +32,7 @@
 </head>
 <body class="text-gray-300 flex items-center justify-center min-h-screen p-4">
 
-    <div class="w-full max-w-md">
+    <div id="login-container" class="w-full max-w-md hidden">
         <div class="text-center mb-8">
             <h1 class="text-4xl font-bold text-white flex items-center justify-center gap-2">
                 <i data-lucide="clapperboard" class="text-red-500 h-10 w-10"></i>
@@ -60,6 +60,12 @@
             </form>
         </div>
     </div>
+    
+    <div id="loading-state" class="text-center py-20 flex flex-col items-center justify-center">
+        <div class="loader mb-4"></div>
+        <p class="text-gray-400">Checking session...</p>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -73,31 +79,38 @@
           appId: "1:313389648813:web:815535b3b0b17e71d9ef24",
         };
 
-        lucide.createIcons();
-        
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-
-        onAuthStateChanged(auth, user => { 
-            if (user && !user.isAnonymous) { 
+        
+        let unsubscribe = onAuthStateChanged(auth, user => {
+            unsubscribe(); // Stop listening after the first check
+            if (user && !user.isAnonymous) {
                 const newUrl = new URL('anime-watchlist.html', window.location.href);
                 window.location.replace(newUrl.href);
-            } 
+            } else {
+                // If no user, show the login form
+                document.getElementById('loading-state').classList.add('hidden');
+                document.getElementById('login-container').classList.remove('hidden');
+            }
         });
-        const googleBtn = document.getElementById('google-signin-btn'), emailInput = document.getElementById('email'), passwordInput = document.getElementById('password'), signinBtn = document.getElementById('signin-btn'), signupBtn = document.getElementById('signup-btn'), errorDiv = document.getElementById('form-error'), togglePasswordBtn = document.getElementById('toggle-password'), forgotPasswordLink = document.getElementById('forgot-password-link');
-        const allButtons = [googleBtn, signinBtn, signupBtn];
-        function setLoading(button, isLoading) {
-            const btnText = button.querySelector('.btn-text'), loader = button.querySelector('.loader');
-            if (isLoading) { allButtons.forEach(btn => btn.disabled = true); if (btnText) btnText.classList.add('hidden'); if (loader) loader.classList.remove('hidden');
-            } else { allButtons.forEach(btn => btn.disabled = false); if (btnText) btnText.classList.remove('hidden'); if (loader) loader.classList.add('hidden'); }
-        }
-        googleBtn.addEventListener('click', async () => { setLoading(googleBtn, true); const provider = new GoogleAuthProvider(); try { await signInWithPopup(auth, provider); } catch (error) { showError(error.message); setLoading(googleBtn, false); } });
-        signupBtn.addEventListener('click', async () => { const email = emailInput.value, password = passwordInput.value; if (!email || !password) { showError("Please enter both email and password."); return; } setLoading(signupBtn, true); try { const userCredential = await createUserWithEmailAndPassword(auth, email, password); await sendEmailVerification(userCredential.user); alert("Verification email sent! Please check your inbox to verify your account before signing in."); } catch (error) { showError(getFriendlyErrorMessage(error)); } finally { setLoading(signupBtn, false); } });
-        signinBtn.addEventListener('click', async () => { const email = emailInput.value, password = passwordInput.value; if (!email || !password) { showError("Please enter both email and password."); return; } setLoading(signinBtn, true); try { const userCredential = await signInWithEmailAndPassword(auth, email, password); if (!userCredential.user.emailVerified) { alert("Please verify your email address first. Check your inbox for the verification link."); setLoading(signinBtn, false); return; } } catch (error) { showError(getFriendlyErrorMessage(error)); setLoading(signinBtn, false); } });
-        togglePasswordBtn.addEventListener('click', () => { const isPassword = passwordInput.type === 'password'; passwordInput.type = isPassword ? 'text' : 'password'; const icon = togglePasswordBtn.querySelector('i'); icon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye'); lucide.createIcons(); });
-        forgotPasswordLink.addEventListener('click', async (e) => { e.preventDefault(); const email = emailInput.value; if (!email) { showError("Please enter your email address to reset your password."); return; } try { await sendPasswordResetEmail(auth, email); alert("Password reset email sent! Please check your inbox."); showError(""); } catch (error) { showError(getFriendlyErrorMessage(error)); } });
-        function showError(message) { errorDiv.textContent = message; errorDiv.classList.toggle('hidden', !message); }
-        function getFriendlyErrorMessage(error) { switch(error.code) { case 'auth/invalid-email': return 'Please enter a valid email address.'; case 'auth/user-not-found': case 'auth/wrong-password': case 'auth/invalid-credential': return 'Invalid email or password.'; case 'auth/email-already-in-use': return 'An account with this email already exists.'; case 'auth/weak-password': return 'Password should be at least 6 characters long.'; default: return 'An unexpected error occurred. Please try again.'; } }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            const googleBtn = document.getElementById('google-signin-btn'), emailInput = document.getElementById('email'), passwordInput = document.getElementById('password'), signinBtn = document.getElementById('signin-btn'), signupBtn = document.getElementById('signup-btn'), errorDiv = document.getElementById('form-error'), togglePasswordBtn = document.getElementById('toggle-password'), forgotPasswordLink = document.getElementById('forgot-password-link');
+            const allButtons = [googleBtn, signinBtn, signupBtn];
+            function setLoading(button, isLoading) {
+                const btnText = button.querySelector('.btn-text'), loader = button.querySelector('.loader');
+                if (isLoading) { allButtons.forEach(btn => btn.disabled = true); if (btnText) btnText.classList.add('hidden'); if (loader) loader.classList.remove('hidden');
+                } else { allButtons.forEach(btn => btn.disabled = false); if (btnText) btnText.classList.remove('hidden'); if (loader) loader.classList.add('hidden'); }
+            }
+            googleBtn.addEventListener('click', async () => { setLoading(googleBtn, true); const provider = new GoogleAuthProvider(); try { await signInWithPopup(auth, provider); } catch (error) { showError(error.message); setLoading(googleBtn, false); } });
+            signupBtn.addEventListener('click', async () => { const email = emailInput.value, password = passwordInput.value; if (!email || !password) { showError("Please enter both email and password."); return; } setLoading(signupBtn, true); try { const userCredential = await createUserWithEmailAndPassword(auth, email, password); await sendEmailVerification(userCredential.user); alert("Verification email sent! Please check your inbox to verify your account before signing in."); } catch (error) { showError(getFriendlyErrorMessage(error)); } finally { setLoading(signupBtn, false); } });
+            signinBtn.addEventListener('click', async () => { const email = emailInput.value, password = passwordInput.value; if (!email || !password) { showError("Please enter both email and password."); return; } setLoading(signinBtn, true); try { const userCredential = await signInWithEmailAndPassword(auth, email, password); if (!userCredential.user.emailVerified) { alert("Please verify your email address first. Check your inbox for the verification link."); setLoading(signinBtn, false); return; } } catch (error) { showError(getFriendlyErrorMessage(error)); setLoading(signinBtn, false); } });
+            togglePasswordBtn.addEventListener('click', () => { const isPassword = passwordInput.type === 'password'; passwordInput.type = isPassword ? 'text' : 'password'; const icon = togglePasswordBtn.querySelector('i'); icon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye'); lucide.createIcons(); });
+            forgotPasswordLink.addEventListener('click', async (e) => { e.preventDefault(); const email = emailInput.value; if (!email) { showError("Please enter your email address to reset your password."); return; } try { await sendPasswordResetEmail(auth, email); alert("Password reset email sent! Please check your inbox."); showError(""); } catch (error) { showError(getFriendlyErrorMessage(error)); } });
+            function showError(message) { errorDiv.textContent = message; errorDiv.classList.toggle('hidden', !message); }
+            function getFriendlyErrorMessage(error) { switch(error.code) { case 'auth/invalid-email': return 'Please enter a valid email address.'; case 'auth/user-not-found': case 'auth/wrong-password': case 'auth/invalid-credential': return 'Invalid email or password.'; case 'auth/email-already-in-use': return 'An account with this email already exists.'; case 'auth/weak-password': return 'Password should be at least 6 characters long.'; default: return 'An unexpected error occurred. Please try again.'; } }
+        });
     </script>
 </body>
 </html>
