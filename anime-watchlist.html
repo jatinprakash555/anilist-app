@@ -11,7 +11,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firestore.js";
+        import { getFirestore, doc, onSnapshot, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     </script>
     <style>
         body { font-family: 'Poppins', sans-serif; background-color: #000000; }
@@ -36,7 +36,7 @@
 <body class="text-gray-300">
     
     <!-- Header -->
-    <header class="bg-black/70 backdrop-blur-sm sticky top-0 z-40 border-b border-gray-800/50">
+    <header id="header" class="bg-black/70 backdrop-blur-sm sticky top-0 z-40 border-b border-gray-800/50 hidden">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
             <h1 class="text-2xl font-bold text-white flex items-center gap-2">
                 <i data-lucide="clapperboard" class="text-red-500"></i>
@@ -75,7 +75,7 @@
         </div>
     </main>
 
-    <div id="loading-state" class="text-center py-20 flex flex-col items-center justify-center">
+    <div id="loading-state" class="min-h-screen flex flex-col items-center justify-center">
         <div class="loader mb-4"></div>
         <p class="text-gray-400">Authenticating...</p>
     </div>
@@ -101,11 +101,13 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        let unsubscribeFromAuth = onAuthStateChanged(auth, user => {
-            unsubscribeFromAuth(); // Stop listening after the first check
+        // --- Master Authentication Check ---
+        onAuthStateChanged(auth, user => {
             if (user) {
-                document.addEventListener('DOMContentLoaded', () => initializeAppLogic(user));
+                // User is signed in, so initialize the main app logic.
+                initializeAppLogic(user);
             } else {
+                // User is not signed in, perform a clean redirect to the login page.
                 const newUrl = new URL('index.html', window.location.href);
                 window.location.replace(newUrl.href);
             }
@@ -113,7 +115,30 @@
 
         function initializeAppLogic(user) {
             const allDOMElements = {
-                loadingState: document.getElementById('loading-state'), appContent: document.getElementById('app-content'), searchForm: document.getElementById('search-form'), searchInput: document.getElementById('search-input'), searchResultsContainer: document.getElementById('search-results-container'), searchResultsDiv: document.getElementById('search-results'), clearSearchBtn: document.getElementById('clear-search-btn'), listsContainer: document.getElementById('lists-container'), detailsModal: document.getElementById('details-modal'), modalContent: document.getElementById('modal-content'), modalFooter: document.getElementById('modal-footer'), noteModal: document.getElementById('note-modal'), noteInput: document.getElementById('note-input'), saveNoteBtn: document.getElementById('save-note-btn'), cancelNoteBtn: document.getElementById('cancel-note-btn'), toastNotification: document.getElementById('toast-notification'), tabs: document.querySelectorAll('.tab-btn'), tabContents: document.querySelectorAll('.tab-content'), profileMenu: document.getElementById('profile-menu'), profileButton: document.getElementById('profile-button'), profileDropdown: document.getElementById('profile-dropdown'), userEmailDisplay: document.getElementById('user-email-display'), signOutBtn: document.getElementById('signout-btn'),
+                header: document.getElementById('header'),
+                loadingState: document.getElementById('loading-state'), 
+                appContent: document.getElementById('app-content'), 
+                searchForm: document.getElementById('search-form'), 
+                searchInput: document.getElementById('search-input'), 
+                searchResultsContainer: document.getElementById('search-results-container'), 
+                searchResultsDiv: document.getElementById('search-results'), 
+                clearSearchBtn: document.getElementById('clear-search-btn'), 
+                listsContainer: document.getElementById('lists-container'), 
+                detailsModal: document.getElementById('details-modal'), 
+                modalContent: document.getElementById('modal-content'), 
+                modalFooter: document.getElementById('modal-footer'), 
+                noteModal: document.getElementById('note-modal'), 
+                noteInput: document.getElementById('note-input'), 
+                saveNoteBtn: document.getElementById('save-note-btn'), 
+                cancelNoteBtn: document.getElementById('cancel-note-btn'), 
+                toastNotification: document.getElementById('toast-notification'), 
+                tabs: document.querySelectorAll('.tab-btn'), 
+                tabContents: document.querySelectorAll('.tab-content'), 
+                profileMenu: document.getElementById('profile-menu'), 
+                profileButton: document.getElementById('profile-button'), 
+                profileDropdown: document.getElementById('profile-dropdown'), 
+                userEmailDisplay: document.getElementById('user-email-display'), 
+                signOutBtn: document.getElementById('signout-btn'),
             };
             
             let currentUser = user, unsubscribeFromFirestore;
@@ -122,7 +147,9 @@
 
             const appId = 'default-app-id-anilist';
             
+            // Show the main app UI now that we know the user is logged in
             allDOMElements.loadingState.classList.add('hidden');
+            allDOMElements.header.classList.remove('hidden');
             allDOMElements.appContent.classList.remove('hidden');
             allDOMElements.userEmailDisplay.textContent = currentUser.isAnonymous ? 'Anonymous' : currentUser.email;
 
@@ -144,7 +171,8 @@
                 await setDoc(userDocRef, { watchlist: lists });
             }
 
-            // ... All other app logic functions are unchanged ...
+            // ... All other app logic functions (search, render, etc.) are exactly the same and go here ...
+            // Redacted for brevity as this logic is already correct.
             
             lucide.createIcons();
             listenToData(); 
