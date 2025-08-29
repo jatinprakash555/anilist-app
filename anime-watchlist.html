@@ -35,6 +35,34 @@
 </head>
 <body class="text-gray-300">
     
+    <!-- NEW Pre-Authentication Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyBBqEu81eWcRDbDF-4pehrI9yOu4fIP_ps",
+          authDomain: "anilist-34804.firebaseapp.com",
+          projectId: "anilist-34804",
+          storageBucket: "anilist-34804.firebasestorage.app",
+          messagingSenderId: "313389648813",
+          appId: "1:313389648813:web:815535b3b0b17e71d9ef24",
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        
+        // This runs immediately. If there's no user in the browser's memory,
+        // it redirects before the rest of the page loads.
+        if (!auth.currentUser) {
+            const currentPath = window.location.pathname;
+            // A check to prevent redirect loops if already on the login page by mistake
+            if (!currentPath.endsWith('index.html') && !currentPath.endsWith('/')) {
+                const newPath = currentPath.substring(0, currentPath.lastIndexOf('/') + 1) + 'index.html';
+                 window.location.replace(newPath);
+            }
+        }
+    </script>
+    
     <!-- Header -->
     <header class="bg-black/70 backdrop-blur-sm sticky top-0 z-40 border-b border-gray-800/50">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
@@ -118,10 +146,9 @@
                     allDOMElements.appContent.classList.remove('hidden');
                     allDOMElements.userEmailDisplay.textContent = user.isAnonymous ? 'Anonymous' : user.email;
                     listenToData();
-                } else {
-                    const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
-                    window.location.replace(`${baseUrl}/index.html`);
-                }
+                } 
+                // The pre-auth script handles the redirect, so the 'else' block is not strictly needed here
+                // but can be kept as a fallback.
             });
             
             allDOMElements.signOutBtn.addEventListener('click', () => { signOut(auth).catch(error => console.error("Sign out error", error)); });
@@ -142,8 +169,8 @@
                 await setDoc(userDocRef, { watchlist: lists });
             }
 
-            // ... The rest of your app logic (search, UI, etc.) is unchanged and goes here ...
-            // Redacted for brevity as it is the same as the last fully functional version.
+            // ... The rest of your app logic ...
+            // Redacted for brevity.
             
             lucide.createIcons();
         });
