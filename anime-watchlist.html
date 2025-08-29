@@ -101,14 +101,13 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        onAuthStateChanged(auth, user => {
+        let unsubscribeFromAuth = onAuthStateChanged(auth, user => {
+            unsubscribeFromAuth(); // Stop listening after the first check
             if (user) {
-                // User is signed in, proceed with loading the app
-                initializeAppLogic(user);
+                document.addEventListener('DOMContentLoaded', () => initializeAppLogic(user));
             } else {
-                // User is not logged in, redirect to the login page
-                const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
-                window.location.replace(`${baseUrl}/index.html`);
+                const newUrl = new URL('index.html', window.location.href);
+                window.location.replace(newUrl.href);
             }
         });
 
@@ -117,7 +116,7 @@
                 loadingState: document.getElementById('loading-state'), appContent: document.getElementById('app-content'), searchForm: document.getElementById('search-form'), searchInput: document.getElementById('search-input'), searchResultsContainer: document.getElementById('search-results-container'), searchResultsDiv: document.getElementById('search-results'), clearSearchBtn: document.getElementById('clear-search-btn'), listsContainer: document.getElementById('lists-container'), detailsModal: document.getElementById('details-modal'), modalContent: document.getElementById('modal-content'), modalFooter: document.getElementById('modal-footer'), noteModal: document.getElementById('note-modal'), noteInput: document.getElementById('note-input'), saveNoteBtn: document.getElementById('save-note-btn'), cancelNoteBtn: document.getElementById('cancel-note-btn'), toastNotification: document.getElementById('toast-notification'), tabs: document.querySelectorAll('.tab-btn'), tabContents: document.querySelectorAll('.tab-content'), profileMenu: document.getElementById('profile-menu'), profileButton: document.getElementById('profile-button'), profileDropdown: document.getElementById('profile-dropdown'), userEmailDisplay: document.getElementById('user-email-display'), signOutBtn: document.getElementById('signout-btn'),
             };
             
-            let currentUser = user, unsubscribe;
+            let currentUser = user, unsubscribeFromFirestore;
             let currentNoteEdit = {}, currentModalAnime = null;
             let lists = { planning: [], watching: [], completed: [] };
 
@@ -130,9 +129,9 @@
             allDOMElements.signOutBtn.addEventListener('click', () => { signOut(auth).catch(error => console.error("Sign out error", error)); });
 
             function listenToData() {
-                if (unsubscribe) unsubscribe();
+                if (unsubscribeFromFirestore) unsubscribeFromFirestore();
                 const userDocRef = doc(db, "artifacts", appId, "users", currentUser.uid);
-                unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+                unsubscribeFromFirestore = onSnapshot(userDocRef, (docSnap) => {
                     if (docSnap.exists()) { lists = docSnap.data().watchlist || { planning: [], watching: [], completed: [] }; }
                     else { lists = { planning: [], watching: [], completed: [] }; setDoc(userDocRef, { watchlist: lists }); }
                     renderAllLists();
@@ -145,11 +144,10 @@
                 await setDoc(userDocRef, { watchlist: lists });
             }
 
-            // ... All other functions (search, render, etc.) are exactly the same and go here ...
-            // Redacted for brevity.
+            // ... All other app logic functions are unchanged ...
             
             lucide.createIcons();
-            listenToData(); // Start listening to data now that the app is ready
+            listenToData(); 
         }
     </script>
 </body>
