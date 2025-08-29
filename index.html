@@ -78,7 +78,12 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
-        onAuthStateChanged(auth, user => { if (user && !user.isAnonymous) { window.location.href = 'anime-watchlist.html'; } });
+        onAuthStateChanged(auth, user => { 
+            if (user && !user.isAnonymous) { 
+                const newUrl = new URL('anime-watchlist.html', window.location.href);
+                window.location.replace(newUrl.href);
+            } 
+        });
         const googleBtn = document.getElementById('google-signin-btn'), emailInput = document.getElementById('email'), passwordInput = document.getElementById('password'), signinBtn = document.getElementById('signin-btn'), signupBtn = document.getElementById('signup-btn'), errorDiv = document.getElementById('form-error'), togglePasswordBtn = document.getElementById('toggle-password'), forgotPasswordLink = document.getElementById('forgot-password-link');
         const allButtons = [googleBtn, signinBtn, signupBtn];
         function setLoading(button, isLoading) {
