@@ -22,37 +22,12 @@
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     </script>
     <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #000000;
-        }
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(125deg, #000000, #1f1f1f, #991b1b, #dc2626, #000000);
-            background-size: 400% 400%;
-            animation: gradientAnimation 25s ease infinite;
-            z-index: -1;
-        }
+        body { font-family: 'Poppins', sans-serif; background-color: #000000; }
+        body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(125deg, #000000, #1f1f1f, #991b1b, #dc2626, #000000); background-size: 400% 400%; animation: gradientAnimation 25s ease infinite; z-index: -1; }
         @keyframes gradientAnimation { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-        .form-container {
-            background: rgba(17, 17, 17, 0.6);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(51, 51, 51, 0.5);
-        }
-        .loader {
-            border: 2px solid #f3f3f3;
-            border-top: 2px solid #dc2626;
-            border-radius: 50%;
-            width: 16px;
-            height: 16px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        .form-container { background: rgba(17, 17, 17, 0.6); backdrop-filter: blur(15px); border: 1px solid rgba(51, 51, 51, 0.5); }
+        .loader { border: 2px solid #f3f3f3; border-top: 2px solid #dc2626; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="text-gray-300 flex items-center justify-center min-h-screen p-4">
@@ -74,20 +49,9 @@
             </button>
             <div class="relative mb-6"><div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-600"></div></div><div class="relative flex justify-center text-sm"><span class="px-2 bg-gray-800 text-gray-400">Or continue with email</span></div></div>
             <form id="email-form" class="space-y-4">
-                <div>
-                    <label for="email" class="sr-only">Email</label>
-                    <input type="email" id="email" required class="w-full bg-gray-700 border border-gray-600 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Email address">
-                </div>
-                <div class="relative">
-                    <label for="password" class="sr-only">Password</label>
-                    <input type="password" id="password" required class="w-full bg-gray-700 border border-gray-600 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Password">
-                    <button type="button" id="toggle-password" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-white">
-                        <i data-lucide="eye" class="h-5 w-5"></i>
-                    </button>
-                </div>
-                <div class="text-right">
-                    <a href="#" id="forgot-password-link" class="text-sm text-red-400 hover:underline">Forgot Password?</a>
-                </div>
+                <div><label for="email" class="sr-only">Email</label><input type="email" id="email" required class="w-full bg-gray-700 border border-gray-600 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Email address"></div>
+                <div class="relative"><label for="password" class="sr-only">Password</label><input type="password" id="password" required class="w-full bg-gray-700 border border-gray-600 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Password"><button type="button" id="toggle-password" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-white"><i data-lucide="eye" class="h-5 w-5"></i></button></div>
+                <div class="text-right"><a href="#" id="forgot-password-link" class="text-sm text-red-400 hover:underline">Forgot Password?</a></div>
                 <div id="form-error" class="text-red-400 text-sm hidden"></div>
                 <div class="flex flex-col sm:flex-row gap-4">
                     <button id="signin-btn" type="button" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2 disabled:opacity-50"><span class="btn-text">Sign In</span><div class="loader hidden"></div></button>
@@ -99,19 +63,28 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        
+        const firebaseConfig = {
+          apiKey: "AIzaSyBBqEu81eWcRDbDF-4pehrI9yOu4fIP_ps",
+          authDomain: "anilist-34804.firebaseapp.com",
+          projectId: "anilist-34804",
+          storageBucket: "anilist-34804.firebasestorage.app",
+          messagingSenderId: "313389648813",
+          appId: "1:313389648813:web:815535b3b0b17e71d9ef24",
+        };
+
         lucide.createIcons();
-        const firebaseConfigString = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
-        let firebaseConfig = {};
-        try { firebaseConfig = JSON.parse(firebaseConfigString); } catch(e) { console.error("Firebase config error"); }
+        
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+
         onAuthStateChanged(auth, user => { if (user && !user.isAnonymous) { window.location.href = 'anime-watchlist.html'; } });
         const googleBtn = document.getElementById('google-signin-btn'), emailInput = document.getElementById('email'), passwordInput = document.getElementById('password'), signinBtn = document.getElementById('signin-btn'), signupBtn = document.getElementById('signup-btn'), errorDiv = document.getElementById('form-error'), togglePasswordBtn = document.getElementById('toggle-password'), forgotPasswordLink = document.getElementById('forgot-password-link');
         const allButtons = [googleBtn, signinBtn, signupBtn];
         function setLoading(button, isLoading) {
             const btnText = button.querySelector('.btn-text'), loader = button.querySelector('.loader');
-            if (isLoading) { allButtons.forEach(btn => btn.disabled = true); if (btnText) btnText.classList.add('hidden'); if (loader) loader.classList.remove('hidden'); }
-            else { allButtons.forEach(btn => btn.disabled = false); if (btnText) btnText.classList.remove('hidden'); if (loader) loader.classList.add('hidden'); }
+            if (isLoading) { allButtons.forEach(btn => btn.disabled = true); if (btnText) btnText.classList.add('hidden'); if (loader) loader.classList.remove('hidden');
+            } else { allButtons.forEach(btn => btn.disabled = false); if (btnText) btnText.classList.remove('hidden'); if (loader) loader.classList.add('hidden'); }
         }
         googleBtn.addEventListener('click', async () => { setLoading(googleBtn, true); const provider = new GoogleAuthProvider(); try { await signInWithPopup(auth, provider); } catch (error) { showError(error.message); setLoading(googleBtn, false); } });
         signupBtn.addEventListener('click', async () => { const email = emailInput.value, password = passwordInput.value; if (!email || !password) { showError("Please enter both email and password."); return; } setLoading(signupBtn, true); try { const userCredential = await createUserWithEmailAndPassword(auth, email, password); await sendEmailVerification(userCredential.user); alert("Verification email sent! Please check your inbox to verify your account before signing in."); } catch (error) { showError(getFriendlyErrorMessage(error)); } finally { setLoading(signupBtn, false); } });
