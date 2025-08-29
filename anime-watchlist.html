@@ -35,34 +35,6 @@
 </head>
 <body class="text-gray-300">
     
-    <!-- NEW Pre-Authentication Script -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-        const firebaseConfig = {
-          apiKey: "AIzaSyBBqEu81eWcRDbDF-4pehrI9yOu4fIP_ps",
-          authDomain: "anilist-34804.firebaseapp.com",
-          projectId: "anilist-34804",
-          storageBucket: "anilist-34804.firebasestorage.app",
-          messagingSenderId: "313389648813",
-          appId: "1:313389648813:web:815535b3b0b17e71d9ef24",
-        };
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        
-        // This runs immediately. If there's no user in the browser's memory,
-        // it redirects before the rest of the page loads.
-        if (!auth.currentUser) {
-            const currentPath = window.location.pathname;
-            // A check to prevent redirect loops if already on the login page by mistake
-            if (!currentPath.endsWith('index.html') && !currentPath.endsWith('/')) {
-                const newPath = currentPath.substring(0, currentPath.lastIndexOf('/') + 1) + 'index.html';
-                 window.location.replace(newPath);
-            }
-        }
-    </script>
-    
     <!-- Header -->
     <header class="bg-black/70 backdrop-blur-sm sticky top-0 z-40 border-b border-gray-800/50">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
@@ -125,32 +97,36 @@
           appId: "1:313389648813:web:815535b3b0b17e71d9ef24",
         };
 
-        document.addEventListener('DOMContentLoaded', () => {
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                // User is signed in, proceed with loading the app
+                initializeAppLogic(user);
+            } else {
+                // User is not logged in, redirect to the login page
+                const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
+                window.location.replace(`${baseUrl}/index.html`);
+            }
+        });
+
+        function initializeAppLogic(user) {
             const allDOMElements = {
                 loadingState: document.getElementById('loading-state'), appContent: document.getElementById('app-content'), searchForm: document.getElementById('search-form'), searchInput: document.getElementById('search-input'), searchResultsContainer: document.getElementById('search-results-container'), searchResultsDiv: document.getElementById('search-results'), clearSearchBtn: document.getElementById('clear-search-btn'), listsContainer: document.getElementById('lists-container'), detailsModal: document.getElementById('details-modal'), modalContent: document.getElementById('modal-content'), modalFooter: document.getElementById('modal-footer'), noteModal: document.getElementById('note-modal'), noteInput: document.getElementById('note-input'), saveNoteBtn: document.getElementById('save-note-btn'), cancelNoteBtn: document.getElementById('cancel-note-btn'), toastNotification: document.getElementById('toast-notification'), tabs: document.querySelectorAll('.tab-btn'), tabContents: document.querySelectorAll('.tab-content'), profileMenu: document.getElementById('profile-menu'), profileButton: document.getElementById('profile-button'), profileDropdown: document.getElementById('profile-dropdown'), userEmailDisplay: document.getElementById('user-email-display'), signOutBtn: document.getElementById('signout-btn'),
             };
             
-            let currentUser = null, db, auth, unsubscribe;
+            let currentUser = user, unsubscribe;
             let currentNoteEdit = {}, currentModalAnime = null;
             let lists = { planning: [], watching: [], completed: [] };
 
             const appId = 'default-app-id-anilist';
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-
-            onAuthStateChanged(auth, user => {
-                if (user) {
-                    currentUser = user;
-                    allDOMElements.loadingState.classList.add('hidden');
-                    allDOMElements.appContent.classList.remove('hidden');
-                    allDOMElements.userEmailDisplay.textContent = user.isAnonymous ? 'Anonymous' : user.email;
-                    listenToData();
-                } 
-                // The pre-auth script handles the redirect, so the 'else' block is not strictly needed here
-                // but can be kept as a fallback.
-            });
             
+            allDOMElements.loadingState.classList.add('hidden');
+            allDOMElements.appContent.classList.remove('hidden');
+            allDOMElements.userEmailDisplay.textContent = currentUser.isAnonymous ? 'Anonymous' : currentUser.email;
+
             allDOMElements.signOutBtn.addEventListener('click', () => { signOut(auth).catch(error => console.error("Sign out error", error)); });
 
             function listenToData() {
@@ -169,11 +145,12 @@
                 await setDoc(userDocRef, { watchlist: lists });
             }
 
-            // ... The rest of your app logic ...
+            // ... All other functions (search, render, etc.) are exactly the same and go here ...
             // Redacted for brevity.
             
             lucide.createIcons();
-        });
+            listenToData(); // Start listening to data now that the app is ready
+        }
     </script>
 </body>
 </html>
